@@ -69,6 +69,29 @@ contents:
 	}
 }
 
+func TestMyGlobber(t *testing.T) {
+	var config testStruct
+	dec := yaml.NewDecoder(strings.NewReader(`---
+contents:
+- src: testdata/myglobtest/*
+  dst: /usr/share/foo/
+`))
+	dec.KnownFields(true)
+	err := dec.Decode(&config)
+	require.NoError(t, err)
+	require.Len(t, config.Contents, 1)
+	parsedContents, err := files.PrepareForPackager(config.Contents, "", false)
+	require.NoError(t, err)
+	for _, c := range parsedContents {
+		switch c.Source {
+		case "testdata/myglobtest/a/b/file1":
+			require.Equal(t, "/usr/share/foo/a/b/file1", c.Destination)
+		case "testdata/myglobtest/x/y/file2":
+			require.Equal(t, "/usr/share/foo/x/y/file2", c.Destination)
+		}
+	}
+}
+
 func TestDeepPathsWithoutGlob(t *testing.T) {
 	var config testStruct
 	dec := yaml.NewDecoder(strings.NewReader(`---
